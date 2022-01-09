@@ -1,0 +1,34 @@
+#!/home/kit4/.virtualenvs/bwf/bin/python3.9
+
+"""
+Main execution module, all actions are called from here
+"""
+
+import auth
+import cmd_handler
+import signal
+
+
+def run():
+    # Registering signals
+    def interrupt_signal_handler(sig, frame):
+        print('\nGood-bye')
+        exit(0)
+    signal.signal(signal.SIGINT, interrupt_signal_handler)
+
+    # Authentication
+    if not auth.is_user_logged_in():
+        token = auth.log_user_in()
+    else:
+        token = auth.get_session_token()
+    auth.export_token(token)
+
+    # Starting interactive console loop
+    while True:
+        command = input('bwf> ')
+        output = cmd_handler.parse(command)
+        print(output)
+
+
+if __name__ == "__main__":
+    run()
