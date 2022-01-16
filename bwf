@@ -4,31 +4,89 @@
 Main execution module, all actions are called from here
 """
 
-import auth
-import cmd_handler
+import argparse
 import signal
+import sys
+
+import auth
+from core import Executor
 
 
-def run():
-    # Registering signals
+# show, create, delete - are subcommands
+# show:
+# show pattern - lists usernames and passwords of items which names
+# correspond to pattern
+# show -p pattern - same but with passwords
+# show -u pattern - same but with usernames
+# show * - lists all usernames and passwords
+# show -p * - lists all passwords
+# show -u * - lists all usernames
+#
+# create (interactive):
+# create -p item_name
+# create -u item_name
+# create -u -p item_name == create -up item name
+#
+# delete
+# delete item_name
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-i', '--interactive', help='run interactive session of bw',
+                    action='store_true')
+subparsers_group = parser.add_subparsers(dest='action_name')
+
+parser_show = subparsers_group.add_parser('show', help="list credentials")
+parser_show.add_argument('-p', '--password', help='list passwords only',
+                         action='store_true')
+parser_show.add_argument('-u', '--username', help='list usernames only',
+                         action='store_true')
+parser_show.add_argument('search_pattern', nargs='?', const=None,
+                         help='name of an item')
+
+parser_create = subparsers_group.add_parser('create', help="create new record")
+parser_create.add_argument('-p', '--password',
+                           help='create password-only record',
+                           action='store_true')
+parser_create.add_argument('-u', '--username',
+                           help='create username only record',
+                           action='store_true')
+parser_create.add_argument('item_name', help='name of new item')
+
+parser_delete = subparsers_group.add_parser('delete', help="delete credentials")
+parser_delete.add_argument('item_name', help='name of item to delete')
+
+
+def start_interactive_session():
+    """Starts interactive shell session"""
+    # Registering signal
     def interrupt_signal_handler(sig, frame):
         print('\nGood-bye')
         exit(0)
     signal.signal(signal.SIGINT, interrupt_signal_handler)
 
-    # Authentication
-    if not auth.is_user_logged_in():
-        token = auth.log_user_in()
-    else:
-        token = auth.get_session_token()
-    auth.export_token(token)
-
-    # Starting interactive console loop
     while True:
-        command = input('bwf> ')
-        output = cmd_handler.parse(command)
-        print(output)
+        command = input('>>> ')
+        # filling argv with interactive shell arguments
+        # so argparse can work with it
+        sys.argv = [''] + command.split()
+        args = parser.parse_args()
+        # session token may expire during the session, so checking it
+        if auth.is_vault_locked():
+            token = auth.unlock_and_get_token()
+            auth.export_token(token)
+        ex = Executor(args)
+        ex.execute_command()
+        ex.pretty_print()
 
 
 if __name__ == "__main__":
-    run()
+    args = parser.parse_args()
+    print(args)
+    auth.authenticate()
+    if args.interactive:
+        start_interactive_session()
+    else:
+        ex = Executor(args)
+        ex.execute_command()
+        ex.pretty_print()
