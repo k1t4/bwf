@@ -72,21 +72,18 @@ class Executor:
         """Prints result of an executed action"""
         if self.action == 'show':
             output_s = ''
-            both_params = self.show_pass and self.show_uname
-            no_params = not (self.show_pass or self.show_uname)
-            if both_params or no_params:
-                for item in self.result_list:
-                    output_s += f'{item.name}:\n' \
-                                f'username: {item.username}\n' \
-                                f'password: {item.password}\n\n'
-            elif self.show_uname:
-                for item in self.result_list:
-                    output_s += f'{item.name}:\n' \
-                                f'username: {item.username}\n\n'
-            else:
-                for item in self.result_list:
-                    output_s += f'{item.name}:\n' \
-                                f'password: {item.password}\n\n'
+            # no params
+            if not (self.show_pass or self.show_uname):
+                self.show_uname = True
+                self.show_pass = True
 
-            print(output_s)
+            for item in self.result_list:
+                output_s += f'{item.name}:\n'
+                if self.show_uname:
+                    output_s += f'username: {item.username}\n'
+                if self.show_pass:
+                    output_s += f'password: {item.password}\n'
+                output_s += '\n'
+
+            print(output_s, end='')
 
