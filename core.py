@@ -4,11 +4,12 @@ Core module where all commands are handled
 import subprocess
 import json
 from collections import namedtuple
+import getpass
 
 
 class Executor:
     """
-    A core class, that executes commands by fetching or writing data from
+    A core class, that executes commands by fetching/writing data from/to
     original bw-cli
     """
     def __init__(self, cl_args):
@@ -62,7 +63,35 @@ class Executor:
 
     def execute_cmd_create(self):
         """Creates a new record with credentials in a vault"""
-        pass
+        # getting templates and filling them with credentials
+        template_ps = subprocess.run(['bw', 'get', 'template', 'item'],
+                                     capture_output=True)
+        template_item = json.loads(template_ps.stdout)
+        template_ps = subprocess.run(['bw', 'get', 'template', 'item.login'],
+                                     capture_output=True)
+        template_item_login = json.loads(template_ps.stdout)
+        # both args are not set = both args are true
+        if not (self.set_pass or self.set_uname):
+            self.set_pass, self.set_uname = True, True
+        if self.set_uname:
+            username = input('New username: ')
+            template_item_login['username'] = username
+        if self.set_pass:
+            password = getpass.getpass('Password: ')
+            template_item_login['password'] = password
+
+        template_item['name'] = self.item_name
+        template_item['login'] = template_item_login
+
+        # encoding and sending filled templates to bw creator
+        encoder_ps = subprocess.run(['bw', 'encode'], capture_output=True,
+                                    input=json.dumps(template_item),
+                                    encoding='ascii')
+
+        creator_ps = subprocess.run(['bw', 'create', 'item'],
+                                    input=encoder_ps.stdout, encoding='ascii')
+        if creator_ps == 1:
+            raise ChildProcessError('bw create has finished with an error')
 
     def execute_cmd_delete(self):
         """Deletes existing record in a vault"""
