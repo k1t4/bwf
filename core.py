@@ -81,7 +81,7 @@ class Executor:
         """Deletes existing record in a vault by search pattern"""
         items = self.__get_items_by_search_pattern(self.search_pattern)
         if not items:
-            print('No matching items, nothing to delete')
+            self.result = 'No matching items, nothing to delete'
             return None
         elif len(items) == 1:
             item_to_delete = items[0]
