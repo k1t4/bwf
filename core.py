@@ -35,9 +35,9 @@ class Executor:
         sp.run(['bw', 'sync'], stdout=sp.DEVNULL)   # fetching fresh data
         if self.action == 'show':
             self.execute_cmd_show()
-        if self.action == 'create':
+        elif self.action == 'create':
             self.execute_cmd_create()
-        if self.action == 'delete':
+        elif self.action == 'delete':
             self.execute_cmd_delete()
 
     def execute_cmd_show(self):
