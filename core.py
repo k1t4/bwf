@@ -1,10 +1,11 @@
 """
 Core module where all commands are handled
 """
-import subprocess
+import subprocess as sp
 import json
 from collections import namedtuple
 import getpass
+import base64
 
 
 class Executor:
@@ -32,7 +33,7 @@ class Executor:
     def execute_command(self):
         """Interface for actions execution"""
         # fetching fresh data
-        subprocess.run(['bw', 'sync'], stdout=subprocess.DEVNULL)
+        sp.run(['bw', 'sync'], stdout=sp.DEVNULL)
         if self.action == 'show':
             self.execute_cmd_show()
         if self.action == 'create':
@@ -42,9 +43,7 @@ class Executor:
 
     def execute_cmd_show(self):
         """Generates a list of items to show based on a search_pattern"""
-        completed_ps = subprocess.run(
-            ['bw', 'list', 'items'], capture_output=True
-        )
+        completed_ps = sp.run(['bw', 'list', 'items'], capture_output=True)
         items = json.loads(completed_ps.stdout)
         CleanItem = namedtuple('CleanItem', 'name username password')
         clean_items = []
@@ -64,11 +63,11 @@ class Executor:
     def execute_cmd_create(self):
         """Creates a new record with credentials in a vault"""
         # getting templates and filling them with credentials
-        template_ps = subprocess.run(['bw', 'get', 'template', 'item'],
-                                     capture_output=True)
+        template_ps = sp.run(['bw', 'get', 'template', 'item'],
+                             capture_output=True)
         template_item = json.loads(template_ps.stdout)
-        template_ps = subprocess.run(['bw', 'get', 'template', 'item.login'],
-                                     capture_output=True)
+        template_ps = sp.run(['bw', 'get', 'template', 'item.login'],
+                             capture_output=True)
         template_item_login = json.loads(template_ps.stdout)
         # both args are not set = both args are true
         if not (self.set_pass or self.set_uname):
@@ -84,14 +83,12 @@ class Executor:
         template_item['login'] = template_item_login
 
         # encoding and sending filled templates to bw creator
-        encoder_ps = subprocess.run(['bw', 'encode'], capture_output=True,
-                                    input=json.dumps(template_item),
-                                    encoding='ascii')
-
-        creator_ps = subprocess.run(['bw', 'create', 'item'],
-                                    input=encoder_ps.stdout, encoding='ascii')
+        encoded_template = base64.b64encode(json.dumps(template_item).encode())
+        creator_ps = sp.run(['bw', 'create', 'item'], input=encoded_template,
+                            stdout=sp.DEVNULL)
         if creator_ps == 1:
             raise ChildProcessError('bw create has finished with an error')
+        print(f'Created item {self.item_name}')
 
     def execute_cmd_delete(self):
         """Deletes existing record in a vault"""
@@ -105,7 +102,7 @@ class Executor:
             if not (self.show_pass or self.show_uname):
                 self.show_uname = True
                 self.show_pass = True
-
+if self.action == 'show':
             for item in self.result_list:
                 output_s += f'{item.name}:\n'
                 if self.show_uname:
