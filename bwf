@@ -54,7 +54,7 @@ parser_create.add_argument('-u', '--username',
 parser_create.add_argument('item_name', help='name of new item')
 
 parser_delete = subparsers_group.add_parser('delete', help="delete credentials")
-parser_delete.add_argument('item_name', help='name of item to delete')
+parser_delete.add_argument('search_pattern', help='name of item to delete')
 
 
 def start_interactive_session():
