@@ -102,7 +102,7 @@ class Executor:
             if not (self.show_pass or self.show_uname):
                 self.show_uname = True
                 self.show_pass = True
-if self.action == 'show':
+
             for item in self.result_list:
                 output_s += f'{item.name}:\n'
                 if self.show_uname:
