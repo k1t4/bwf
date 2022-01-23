@@ -1,4 +1,4 @@
-#!/home/kit4/.virtualenvs/bwf/bin/python3.9
+#!/usr/bin/python
 
 """
 Main execution module, all actions are called from here
@@ -34,6 +34,7 @@ from core import Executor
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--interactive', help='run interactive session of bw',
                     action='store_true')
+
 subparsers_group = parser.add_subparsers(dest='action_name')
 
 parser_show = subparsers_group.add_parser('show', help="list credentials")
@@ -57,36 +58,56 @@ parser_delete = subparsers_group.add_parser('delete', help="delete credentials")
 parser_delete.add_argument('search_pattern', help='name of item to delete')
 
 
-def start_interactive_session():
-    """Starts interactive shell session"""
-    # Registering signal
+def main():
+    """
+    Main function that handles command execution or
+    invokes interactive shell if -i option is triggered
+    """
+    # registering signal handler
     def interrupt_signal_handler(sig, frame):
         print('\nGood-bye')
         exit(0)
     signal.signal(signal.SIGINT, interrupt_signal_handler)
 
+    auth.authenticate()
+
+    cl_args = parser.parse_args()
+    if cl_args.interactive and cl_args.action_name:
+        print('Interactive option and action argument '
+              'can not be used together. Pls try again')
+        return None
+    if cl_args.interactive or not cl_args.action_name:
+        start_interactive_session()
+    else:
+        ex = Executor(cl_args)
+        ex.execute_command()
+        ex.print_result()
+
+
+def start_interactive_session():
+    """Starts an interactive shell session"""
+    # adding a new subcommand so user can exit from interactive-mode
+    subparsers_group.add_parser('exit', help='exit an interactive cli')
     while True:
         command = input('>>> ')
         # filling argv with interactive shell arguments
         # so argparse can work with it
         sys.argv = [''] + command.split()
-        args = parser.parse_args()
+        cl_args = parser.parse_args()
+        if cl_args.interactive:
+            print('No such option in interactive cli')
+            continue
+        if cl_args.action_name == 'exit':
+            print('Good-bye')
+            return None
         # session token may expire during the session, so checking it
         if auth.is_vault_locked():
             token = auth.unlock_and_get_token()
             auth.export_token(token)
-        ex = Executor(args)
+        ex = Executor(cl_args)
         ex.execute_command()
-        ex.pretty_print()
+        ex.print_result()
 
 
 if __name__ == "__main__":
-    args = parser.parse_args()
-    print(args)
-    auth.authenticate()
-    if args.interactive:
-        start_interactive_session()
-    else:
-        ex = Executor(args)
-        ex.execute_command()
-        ex.pretty_print()
+    main()
