@@ -1,11 +1,8 @@
-"""
-Core module where all commands are handled
-"""
-import subprocess as sp
-import json
-from collections import namedtuple
-import getpass
 import base64
+import getpass
+import json
+import subprocess as sp
+from collections import namedtuple
 
 
 class Executor:
@@ -31,7 +28,7 @@ class Executor:
             self.search_pattern = cl_args.search_pattern
 
     def execute_command(self):
-        """Interface for actions execution"""
+        """Interface for action execution"""
         sp.run(['bw', 'sync'], stdout=sp.DEVNULL)   # fetching fresh data
         if self.action == 'show':
             self.execute_cmd_show()
@@ -58,7 +55,8 @@ class Executor:
         template_item_login = self.__get_template('item.login')
         # no args == both args
         if not (self.param_set_pass or self.param_set_uname):
-            self.param_set_pass, self.param_set_uname = True, True
+            self.param_set_pass = True
+            self.param_set_uname = True
         if self.param_set_uname:
             username = input('New username: ')
             template_item_login['username'] = username
@@ -86,16 +84,7 @@ class Executor:
         elif len(items) == 1:
             item_to_delete = items[0]
         else:   # when multiple items match
-            print('Multiple items match your query,'
-                  ' please choose one to delete:')
-            for index, item in enumerate(items):
-                print(f'{index+1}) {item["name"]} with id {item["id"]}')
-            chosen_index = input('Type which one to delete (ex: 1): ')
-            while not chosen_index.isnumeric() \
-                    or not (1 <= int(chosen_index) <= len(items)):
-                chosen_index = input('Please, choose from integers: ')
-            chosen_index = int(chosen_index)
-            item_to_delete = items[int(chosen_index)-1]
+            item_to_delete = self.__get_item_to_delete(items)
 
         deleter_ps = sp.run(['bw', 'delete', 'item', item_to_delete['id']],
                             stdout=sp.DEVNULL)
@@ -103,13 +92,14 @@ class Executor:
             raise ChildProcessError('bw delete has finished with an error')
         self.result = f'Deleted item {item_to_delete["name"]}'
 
-    def pretty_print(self):
+    def print_result(self):
         """Prints result of an executed action"""
         if self.action == 'show':
             output_s = ''
             # no params == all params
             if not (self.param_show_pass or self.param_show_uname):
-                self.param_show_uname, self.param_show_pass = True, True
+                self.param_show_uname = True
+                self.param_show_pass = True
 
             for item in self.result:
                 output_s += f'{item.name}:\n'
@@ -124,6 +114,23 @@ class Executor:
             print(self.result)
 
     @staticmethod
+    def __get_item_to_delete(items):
+        """
+        Offers user a choice of an item to delete when there is
+        multiple items matching the search pattern
+        """
+        print('Multiple items match your query,'
+              ' please choose one to delete:')
+        for index, item in enumerate(items):
+            print(f'{index + 1}) {item["name"]} with id {item["id"]}')
+        chosen_index = input('Type which one to delete (ex: 1): ')
+        while not (chosen_index.isnumeric()
+                   and (1 <= int(chosen_index) <= len(items))):
+            chosen_index = input('Please, choose from integers in range: ')
+        chosen_index = int(chosen_index) - 1
+        return items[chosen_index]
+
+    @staticmethod
     def __get_template(template_name):
         """Just gets a template from bw cli"""
         template_ps = sp.run(['bw', 'get', 'template', template_name],
@@ -136,8 +143,6 @@ class Executor:
         completed_ps = sp.run(['bw', 'list', 'items'], capture_output=True)
         items = json.loads(completed_ps.stdout)
         if search_pattern:
-            items = list(
-                filter(
-                    lambda i: search_pattern.lower() in i['name'].lower(),
-                    items))
+            items = list(filter(lambda i: search_pattern.lower()
+                                in i['name'].lower(), items))
         return items
