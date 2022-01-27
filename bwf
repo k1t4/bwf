@@ -12,23 +12,27 @@ import auth
 from core import Executor
 
 
-# show, create, delete - are subcommands
-# show:
-# show pattern - lists usernames and passwords of items which names
-# correspond to pattern
-# show -p pattern - same but with passwords
-# show -u pattern - same but with usernames
-# show * - lists all usernames and passwords
-# show -p * - lists all passwords
-# show -u * - lists all usernames
+# show, create, delete - are subcommands:
 #
-# create (interactive):
-# create -p item_name
-# create -u item_name
-# create -u -p item_name == create -up item name
+# show - lists usernames and passwords of items which names
+# correspond to a search pattern (empty search pattern = all records):
+#   usage:
+#       show -p pattern - list only passwords
+#       show -u pattern - list only usernames
+#       show -p - lists all passwords
+#       show -u - lists all usernames
+#       show == show -up == show -u -p - lists all usernames and passwords
 #
-# delete
-# delete item_name
+# create (interactive) - creates a new credentials record in your wallet:
+#   usage:
+#       create -p item_name - create only password record
+#       create -u item_name - create only username record
+#       create -u -p item_name == create -up item name - create full record
+#
+# delete (interactive) - removes a record from your wallet that corresponds
+# to a search pattern (if multiple items match -> requests user to choose one):
+#   usage:
+#       delete item_name - deletes items
 
 
 parser = argparse.ArgumentParser()
@@ -45,7 +49,8 @@ parser_show.add_argument('-u', '--username', help='list usernames only',
 parser_show.add_argument('search_pattern', nargs='?', const=None,
                          help='name of an item')
 
-parser_create = subparsers_group.add_parser('create', help="create new record")
+parser_create = subparsers_group.add_parser('create',
+                                            help="create new credentials")
 parser_create.add_argument('-p', '--password',
                            help='create password-only record',
                            action='store_true')
@@ -69,9 +74,10 @@ def main():
         exit(0)
     signal.signal(signal.SIGINT, interrupt_signal_handler)
 
+    cl_args = parser.parse_args()
+
     auth.authenticate()
 
-    cl_args = parser.parse_args()
     if cl_args.interactive and cl_args.action_name:
         print('Interactive option and action argument '
               'can not be used together. Pls try again')
