@@ -31,7 +31,7 @@ def unlock_and_get_token() -> str:
     # check for errors
     if completed_ps.returncode == 1:
         print('Incorrect password, try again...')
-        unlock_and_get_token()
+        return unlock_and_get_token()
     token = re.findall(r'BW_SESSION="(\S+)"', str(completed_ps.stdout))[0]
     return token
 
