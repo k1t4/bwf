@@ -6,6 +6,7 @@ Main execution module, all actions are called from here
 
 import argparse
 import signal
+import shutil
 import sys
 
 import auth
@@ -76,6 +77,14 @@ def main():
         sys.exit()
     signal.signal(signal.SIGINT, interrupt_signal_handler)
 
+    # checking if original bw-cli is installed
+    bw_path = shutil.which('bw')
+    if not bw_path:
+        print('This program is a wrapper of Bitwarden CLI, so to use it - you'
+              ' should install Bitwarden CLI:\n'
+              'https://bitwarden.com/help/cli/#download-and-install')
+        sys.exit(1)
+
     cl_args = parser.parse_args()
 
     if cl_args.interactive and cl_args.action_name:
@@ -111,7 +120,7 @@ def start_interactive_session():
         cl_args.interactive = True  # setting it explicitly
         if cl_args.action_name == 'exit':
             print('Good-bye')
-            return None
+            sys.exit()
         # session token may expire during the session, so checking it
         if auth.is_vault_locked():
             token = auth.unlock_and_get_token()
