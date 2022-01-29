@@ -2,23 +2,23 @@
 Functions that are used for authentication
 """
 
-import subprocess
 import getpass
-import re
 import json
 import os
+import re
+import subprocess as sp
 
 
 def is_user_logged_in() -> bool:
     """Checks if a user is logged-in or not"""
-    completed_ps = subprocess.run(['bw', 'status'], capture_output=True)
+    completed_ps = sp.run(['bw', 'status'], capture_output=True)
     status = json.loads(completed_ps.stdout)['status']
     return status != 'unauthenticated'
 
 
 def is_vault_locked():
     """Checks if vault of logged-in user is locked or not"""
-    completed_ps = subprocess.run(['bw', 'status'], capture_output=True)
+    completed_ps = sp.run(['bw', 'status'], capture_output=True)
     status = json.loads(completed_ps.stdout)['status']
     return status == 'locked'
 
@@ -27,7 +27,7 @@ def unlock_and_get_token() -> str:
     """Gets user's session token"""
     print('Please, submit your password:')
     passwd = getpass.getpass('Password: ')
-    completed_ps = subprocess.run(['bw', 'unlock', passwd], capture_output=True)
+    completed_ps = sp.run(['bw', 'unlock', passwd], capture_output=True)
     # check for errors
     if completed_ps.returncode == 1:
         print('Incorrect password, try again...')
@@ -41,10 +41,6 @@ def export_token(token) -> None:
     os.environ['BW_SESSION'] = token
 
 
-def remove_token():
-    """Deletes token from environment"""
-
-
 def log_in_and_get_token() -> str:
     """
     Logs user in and returns session token to environment,
@@ -54,10 +50,10 @@ def log_in_and_get_token() -> str:
     email = input('E-mail: ')
     passwd = getpass.getpass('Password: ')
     # need to ensure that it is safe
-    completed_ps = subprocess.run(['bw', 'login', email, passwd])
+    completed_ps = sp.run(['bw', 'login', email, passwd], capture_output=True)
     if completed_ps.returncode == 1:
         print('Incorrect credentials, try again...', end='\n\n')
-        log_in_and_get_token()
+        return log_in_and_get_token()
     token = re.findall(r'BW_SESSION="(\S+)"', str(completed_ps.stdout))[0]
     print('You are successfully logged-in')
     return token
@@ -65,11 +61,12 @@ def log_in_and_get_token() -> str:
 
 def log_user_out():
     """Logs user out"""
+    sp.run(['bw', 'logout'], stdout=sp.DEVNULL)
 
 
 def authenticate():
     """
-    Authenticates user and unlocks vault with exporting session token
+    Authenticates user, unlocks the vault and exports session token
     """
     if not is_user_logged_in():
         token = log_in_and_get_token()
