@@ -16,6 +16,9 @@ pip install -i https://test.pypi.org/simple/ bwfriendly==0.0.2
 After install you will be able to call a script called `bwf` from
 your command line to start a program.
 
+> The wrapper depends on an original Bitwarden-CLI, so you
+> need to [install](https://github.com/k1t4/bwf) it
+
 ## How to use?
 The tool is self-documented, so just write `bwf -h` or `bwf --help`
 
