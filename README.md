@@ -19,6 +19,13 @@ your command line to start a program.
 ## How to use?
 The tool is self-documented, so just write `bwf -h` or `bwf --help`
 
+There is also an interactive mode (`-i` or `--interactive`)
+, that persists a session token. It is very useful when you need to 
+perform several operations on your wallet without entering
+a password for each command. Subcommands for interactive and classic
+modes are absolutely the same, except interactive mode has `exit`
+subcommand to exit from interactive cli.
+
 I will just duplicate the usage here:
 
 `show`, `create`, `delete`, `logout` - are subcommands:
