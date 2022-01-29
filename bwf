@@ -62,6 +62,8 @@ parser_create.add_argument('item_name', help='name of new item')
 parser_delete = subparsers_group.add_parser('delete', help="delete credentials")
 parser_delete.add_argument('search_pattern', help='name of item to delete')
 
+subparsers_group.add_parser('logout', help="logs user out")
+
 
 def main():
     """
@@ -71,20 +73,23 @@ def main():
     # registering signal handler
     def interrupt_signal_handler(sig, frame):
         print('\nGood-bye')
-        exit(0)
+        sys.exit()
     signal.signal(signal.SIGINT, interrupt_signal_handler)
 
     cl_args = parser.parse_args()
-
-    auth.authenticate()
 
     if cl_args.interactive and cl_args.action_name:
         print('Interactive option and action argument '
               'can not be used together. Pls try again')
         return None
+
     if cl_args.interactive or not cl_args.action_name:
+        auth.authenticate()
         start_interactive_session()
     else:
+        # no need for an authentication when logging-out
+        if cl_args.action_name != 'logout':
+            auth.authenticate()
         ex = Executor(cl_args)
         ex.execute_command()
         ex.print_result()
@@ -100,9 +105,10 @@ def start_interactive_session():
         # so argparse can work with it
         sys.argv = [''] + command.split()
         cl_args = parser.parse_args()
-        if cl_args.interactive:
-            print('No such option in interactive cli')
+        if cl_args.interactive:     # warning a user
+            print('You are already in interactive cli')
             continue
+        cl_args.interactive = True  # setting it explicitly
         if cl_args.action_name == 'exit':
             print('Good-bye')
             return None

@@ -1,8 +1,11 @@
 import base64
 import getpass
 import json
+import sys
 import subprocess as sp
 from collections import namedtuple
+
+import auth
 
 
 class Executor:
@@ -12,6 +15,7 @@ class Executor:
     """
     def __init__(self, cl_args):
         self.action = cl_args.action_name
+        self.interactive = cl_args.interactive
         self.result = None
 
         if self.action == 'show':
@@ -29,13 +33,18 @@ class Executor:
 
     def execute_command(self):
         """Interface for action execution"""
-        sp.run(['bw', 'sync'], stdout=sp.DEVNULL)   # fetching fresh data
-        if self.action == 'show':
-            self.execute_cmd_show()
-        elif self.action == 'create':
-            self.execute_cmd_create()
-        elif self.action == 'delete':
-            self.execute_cmd_delete()
+        if self.action != 'logout':
+            sp.run(['bw', 'sync'], stdout=sp.DEVNULL)   # fetching fresh data
+
+        function_of_action = {
+            'show': self.execute_cmd_show,
+            'create': self.execute_cmd_create,
+            'delete': self.execute_cmd_delete,
+            'logout': self.execute_cmd_logout,
+        }
+        # no need for checking an existence of action, bcs it is
+        # handled by argparse
+        function_of_action.get(self.action)()
 
     def execute_cmd_show(self):
         """Generates a list of items to show based on a search_pattern"""
@@ -91,6 +100,18 @@ class Executor:
         if deleter_ps.returncode == 1:
             raise ChildProcessError('bw delete has finished with an error')
         self.result = f'Deleted item {item_to_delete["name"]}'
+
+    def execute_cmd_logout(self):
+        """Just logs user out"""
+        if self.interactive:    # means we are already logged in
+            auth.log_user_out()
+            print('Good-bye')
+            sys.exit()
+        elif auth.is_user_logged_in():
+            auth.log_user_out()
+            self.result = 'Good-bye'
+        else:
+            self.result = 'You are not logged in, nothing to do'
 
     def print_result(self):
         """Prints result of an executed action"""
