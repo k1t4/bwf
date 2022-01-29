@@ -9,8 +9,8 @@ import signal
 import shutil
 import sys
 
-import auth
-from core import Executor
+import bwf.auth as auth
+from bwf.core import Executor
 
 
 # show, create, delete - are subcommands:

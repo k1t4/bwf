@@ -5,7 +5,7 @@ import sys
 import subprocess as sp
 from collections import namedtuple
 
-import auth
+import bwf.auth as auth
 
 
 class Executor:
