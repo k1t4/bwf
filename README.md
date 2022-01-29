@@ -1,6 +1,4 @@
-# bwf
-Bitwarden CLI, but friendly
-<hr>
+# bwf - Bitwarden CLI, but friendly
 
 ## What is it?
 This program is just a wrapper on a Bitwarden-CLI. The goal of this
