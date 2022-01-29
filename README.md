@@ -17,7 +17,8 @@ After install you will be able to call a script called `bwf` from
 your command line to start a program.
 
 > The wrapper depends on an original Bitwarden-CLI, so you
-> need to [install](https://github.com/k1t4/bwf) it
+> need to 
+> [install](https://bitwarden.com/help/cli/#download-and-install) it
 
 ## How to use?
 The tool is self-documented, so just write `bwf -h` or `bwf --help`
